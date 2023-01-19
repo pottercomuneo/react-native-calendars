@@ -232,7 +232,7 @@ const CalendarHeader = forwardRef((props: CalendarHeaderProps, ref) => {
       <TouchableOpacity
         onPress={onPress}
         disabled={shouldDisable}
-        style={style.current.arrow}
+        style={shouldDisable ? style.current.disabledArrow : style.current.arrow}
         hitSlop={hitSlop}
         testID={`${testID}.${arrowId}`}
       >
