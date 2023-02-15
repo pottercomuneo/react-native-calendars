@@ -2,12 +2,12 @@ import PropTypes from 'prop-types';
 import XDate from 'xdate';
 import isEmpty from 'lodash/isEmpty';
 import React, {useRef, useState, useEffect, useCallback, useMemo} from 'react';
-import {View, ViewStyle, StyleProp} from 'react-native';
+import {View, ViewStyle, StyleProp, TouchableOpacity, Text} from 'react-native';
 // @ts-expect-error
 import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
 
 import constants from '../commons/constants';
-import {page, isGTE, isLTE, sameMonth} from '../dateutils';
+import {page, isGTE, isLTE, sameMonth, getLocale} from '../dateutils';
 import {xdateToData, parseDate, toMarkingFormat} from '../interface';
 import {getState} from '../day-state-manager';
 import {extractHeaderProps, extractDayProps} from '../componentUpdater';
@@ -93,7 +93,9 @@ const Calendar = (props: CalendarProps & ContextProp) => {
     headerStyle,
     accessibilityElementsHidden,
     importantForAccessibility,
-    testID,
+    testID, 
+    shownLevel, 
+    updateShownLevel,
     style: propsStyle
   } = props;
   const [currentMonth, setCurrentMonth] = useState(current || initialDate ? parseDate(current || initialDate) : new XDate());
@@ -215,6 +217,31 @@ const Calendar = (props: CalendarProps & ContextProp) => {
     );
   };
 
+  const setMonthAndPop = (m) => {
+      setCurrentMonth(new XDate(currentMonth.getFullYear()+'-'+('0'+m).slice(-2)+'-01'));
+      updateShownLevel(0);
+  };
+  const renderMonthFastSearch = (month, id) => {
+      const dayProps = extractDayProps(props);
+      const dateString = getLocale().monthNamesShort[month-1];
+      const isControlled = isEmpty(props.context);
+      return (<View style={style.current.dayContainer} key={id}>
+      <Text {...dayProps} style={{fontWeight: 'bold'}} testID={`${testID}.month_${dateString}`} date={dateString} state={getState(month, currentMonth, props, isControlled)} marking={markedDates?.[dateString]} onPress={() => setMonthAndPop(month)} onLongPress={onLongPressDay}>{dateString}</Text>
+    </View>);
+  };
+  const setYearAndPop = (y) => {
+      setCurrentMonth(new XDate(y+'-'+('0'+(currentMonth.getMonth()+1)).slice(-2)+'-01'));
+      updateShownLevel(1);
+  };
+  const renderYearFastSearch = (year, id) => {
+      const dayProps = extractDayProps(props);
+      const dateString = year.toString();
+      const isControlled = isEmpty(props.context);
+      return (<View style={style.current.dayContainer} key={id}>
+      <Text {...dayProps} style={{fontWeight: 'bold'}} testID={`${testID}.year_${dateString}`} date={dateString} state={getState(year, currentMonth, props, isControlled)} marking={markedDates?.[dateString]} onPress={() => setYearAndPop(year)} onLongPress={onLongPressDay}>{dateString}</Text>
+    </View>);
+  };
+
   const renderWeek = (days: XDate[], id: number) => {
     const week = [];
 
@@ -233,6 +260,25 @@ const Calendar = (props: CalendarProps & ContextProp) => {
     );
   };
 
+  const renderGoM = (months, id) => {
+      const gom = [];
+      months.forEach((month, id2) => {
+          gom.push(renderMonthFastSearch(month, id2));
+      }, this);
+      return (<View style={style.current.week} key={id}>
+          {gom}
+      </View>);
+  };
+  const renderGoY = (years, id) => {
+      const goy = [];
+      years.forEach((year, id2) => {
+          goy.push(renderYearFastSearch(year, id2));
+      }, this);
+      return (<View style={style.current.week} key={id}>
+          {goy}
+      </View>);
+  };
+
   const renderMonth = () => {
     const shouldShowSixWeeks = showSixWeeks && !hideExtraDays;
     const days = page(currentMonth, firstDay, shouldShowSixWeeks);
@@ -243,6 +289,23 @@ const Calendar = (props: CalendarProps & ContextProp) => {
     }
 
     return <View style={style.current.monthView}>{weeks}</View>;
+  };
+
+  const renderYear = () => {
+      const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+      const gom = [];
+      while (months.length) {
+          gom.push(renderGoM(months.splice(0, 4), gom.length));
+      }
+      return <View style={style.current.monthView}>{gom}</View>;
+  };
+  const renderDecades = () => {
+      const years = Array.from(new Array(30), (x, i) => i + currentMonth.getFullYear()-17);
+      const goy = [];
+      while (years.length) {
+          goy.push(renderGoY(years.splice(0, 5), goy.length));
+      }
+      return <View style={style.current.monthView}>{goy}</View>;
   };
 
   const shouldDisplayIndicator = useMemo(() => {
@@ -279,6 +342,19 @@ const Calendar = (props: CalendarProps & ContextProp) => {
     onSwipe: (direction: string) => onSwipe(direction)
   };
   const gestureProps = enableSwipeMonths ? swipeProps : undefined;
+  let calendarRenderCase;
+  switch (shownLevel) {
+      case 2:
+          calendarRenderCase = renderDecades();
+          break;
+      case 1:
+          calendarRenderCase = renderYear();
+          break;
+      case 0:
+      default:
+          calendarRenderCase = renderMonth();
+          break;
+  }
 
   return (
     <GestureComponent {...gestureProps}>
@@ -289,7 +365,7 @@ const Calendar = (props: CalendarProps & ContextProp) => {
         importantForAccessibility={importantForAccessibility} // Android
       >
         {renderHeader()}
-        {renderMonth()}
+        {calendarRenderCase}
       </View>
     </GestureComponent>
   );
