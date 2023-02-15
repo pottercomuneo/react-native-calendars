@@ -114,6 +114,8 @@ export function extractHeaderProps(props: CalendarProps) {
     numberOfDays,
     current,
     timelineLeftInset,
+    shownLevel,
+    updateShownLevel,
     testID
   } = props;
 
@@ -139,6 +141,8 @@ export function extractHeaderProps(props: CalendarProps) {
     numberOfDays,
     current,
     timelineLeftInset,
+    shownLevel,
+    updateShownLevel,
     testID
   };
 
