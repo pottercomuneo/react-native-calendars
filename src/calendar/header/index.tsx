@@ -1,7 +1,7 @@
 import includes from 'lodash/includes';
 import XDate from 'xdate';
 
-import React, {Fragment, ReactNode, useCallback, useMemo, forwardRef, useImperativeHandle, useRef} from 'react';
+import React, {Fragment, ReactNode, useCallback, useMemo, forwardRef, useImperativeHandle, useRef, useState, useEffect} from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -76,6 +76,12 @@ const accessibilityActions = [
 ];
 
 const CalendarHeader = forwardRef((props: CalendarHeaderProps, ref) => {
+  const [shownLevel, setShownLevel] = useState(props.shownLevel);
+  useEffect(() => {
+      if (props.shownLevel !== shownLevel) {
+          setShownLevel(props.shownLevel);
+      }
+  }, [props.shownLevel]);
   const {
     theme,
     style: propsStyle,
@@ -102,7 +108,8 @@ const CalendarHeader = forwardRef((props: CalendarHeaderProps, ref) => {
     importantForAccessibility,
     numberOfDays,
     current = '',
-    timelineLeftInset
+    timelineLeftInset,
+    updateShownLevel
   } = props;
   
   const numberOfDaysCondition = useMemo(() => {
@@ -193,7 +200,21 @@ const CalendarHeader = forwardRef((props: CalendarHeaderProps, ref) => {
 
   const _renderHeader = () => {
     const webProps = Platform.OS === 'web' ? {'aria-level': webAriaLevel} : {};
-
+    
+    let headerText;
+    switch (shownLevel) {
+        case 2:
+            headerText = (month?.getFullYear()-17)+' – '+(month?.getFullYear()+12);
+            break;
+        case 1:
+            headerText = month?.getFullYear();
+            break;
+        case 0:
+        default:
+            headerText = formatNumbers(month?.toString(monthFormat));
+            break;
+    }
+    
     if (renderHeader) {
       return renderHeader(month);
     }
@@ -203,16 +224,16 @@ const CalendarHeader = forwardRef((props: CalendarHeaderProps, ref) => {
     }
 
     return (
-      <Fragment>
+      <TouchableOpacity onPress={() => updateShownLevel((props.shownLevel + 1) % 3)}>
         <Text
           allowFontScaling={false}
           style={style.current.monthText}
           testID={`${testID}.title`}
           {...webProps}
         >
-          {formatNumbers(month?.toString(monthFormat))}
+          {headerText}
         </Text>
-      </Fragment>
+      </TouchableOpacity>
     );
   };
 
@@ -261,6 +282,9 @@ const CalendarHeader = forwardRef((props: CalendarHeaderProps, ref) => {
   };
 
   const renderDayNames = () => {
+    if (shownLevel > 0) {
+        return (<View style={dayNamesStyle} testID={`${testID}.dayNames`}/>);
+    }
     if (!hideDayNames) {
       return (
         <View
