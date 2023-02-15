@@ -33,6 +33,11 @@ export default function (theme: Theme = {}) {
       padding: 10,
       ...appStyle.arrowStyle
     },
+    disabledArrow: {
+        padding: 10,
+        backgroundColor: appStyle.disabledArrowBackgroundColor,
+        ...appStyle.arrowStyle
+    },
     arrowImage: {
       ...rtlStyle,
       tintColor: appStyle.arrowColor,
