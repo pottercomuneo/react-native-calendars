@@ -46,6 +46,7 @@ export interface Theme {
   dotColor?: string;
   selectedDotColor?: string;
   disabledArrowColor?: string;
+  disabledArrowBackgroundColor?: string;
   textDayFontFamily?: TextStyle['fontFamily'];
   textMonthFontFamily?: TextStyle['fontFamily'];
   textDayHeaderFontFamily?: TextStyle['fontFamily'];
